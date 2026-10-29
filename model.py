@@ -484,8 +484,25 @@ def adam_step(param, grad, m, v, t, lr, beta_one, beta_two, eps):
     v_hat = adam_bias_correct(new_v, beta_two, t)
     return adam_param_step(param, m_hat, v_hat, lr, eps), new_m, new_v
 
-# Step 38 - adam_update_v (not yet solved)
-# TODO: implement
+# Step 38 - adam_update_v
+def adam_update_m(m, grad, beta_one):
+    return beta_one * m + (1.0 - beta_one) * grad
+
+def adam_update_v(v, grad, beta_two):
+    return beta_two * v + (1.0 - beta_two) * (grad ** 2)
+
+def adam_bias_correct(moment, beta, t):
+    return moment / (1.0 - beta ** t)
+
+def adam_param_step(param, m_hat, v_hat, lr, eps):
+    return param - lr * m_hat / (np.sqrt(v_hat) + eps)
+
+def adam_step(param, grad, m, v, t, lr, beta_one, beta_two, eps):
+    new_m = adam_update_m(m, grad, beta_one)
+    new_v = adam_update_v(v, grad, beta_two)
+    m_hat = adam_bias_correct(new_m, beta_one, t)
+    v_hat = adam_bias_correct(new_v, beta_two, t)
+    return adam_param_step(param, m_hat, v_hat, lr, eps), new_m, new_v
 
 # Step 39 - adam_bias_correct (not yet solved)
 # TODO: implement
