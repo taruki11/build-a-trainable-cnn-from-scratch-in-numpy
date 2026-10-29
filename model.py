@@ -564,8 +564,23 @@ def adam_step(param, grad, m, v, t, lr, beta_one, beta_two, eps):
     v_hat = adam_bias_correct(new_v, beta_two, t)
     return adam_param_step(param, m_hat, v_hat, lr, eps), new_m, new_v
 
-# Step 42 - init_conv_layer (not yet solved)
-# TODO: implement
+# Step 42 - init_conv_layer
+def init_conv_layer(out_channels, in_channels, kernel_size, seed=0):
+    fan_in = in_channels * kernel_size * kernel_size
+    return {'W': he_init((out_channels, in_channels, kernel_size, kernel_size), fan_in, seed),
+            'b': init_zero_bias(out_channels)}
+
+def init_linear_layer(in_features, out_features, seed=0):
+    return {'W': he_init((in_features, out_features), in_features, seed),
+            'b': init_zero_bias(out_features)}
+
+def init_lenet(in_channels, num_classes, seed=0):
+    return {
+        'conv1': init_conv_layer(6, in_channels, 5, seed=seed),
+        'conv2': init_conv_layer(16, 6, 5, seed=seed + 1),
+        'fc1': init_linear_layer(256, 120, seed=seed + 2),
+        'fc2': init_linear_layer(120, num_classes, seed=seed + 3),
+    }
 
 # Step 43 - init_linear_layer (not yet solved)
 # TODO: implement
