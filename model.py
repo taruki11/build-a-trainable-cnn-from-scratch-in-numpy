@@ -686,17 +686,64 @@ def lenet_backward(dlogits, caches):
 def lenet_predict(x, params):
     return argmax_rows(lenet_forward(x, params)[0])
 
-# Step 49 - backward_classifier_block (not yet solved)
-# TODO: implement
+# Step 49 - backward_classifier_block
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
 
-# Step 50 - lenet_backward (not yet solved)
-# TODO: implement
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
 
-# Step 51 - lenet_predict (not yet solved)
-# TODO: implement
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
 
-# Step 52 - build_synthetic_image_dataset (not yet solved)
-# TODO: implement
+# Step 50 - lenet_backward
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
+
+# Step 51 - lenet_predict
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
+
+# Step 52 - build_synthetic_image_dataset
+def build_synthetic_image_dataset(num_samples, num_classes, image_size, in_channels=1, seed=0):
+    rng = np.random.default_rng(seed)
+    y = rng.integers(0, num_classes, size=num_samples)
+    x = rng.standard_normal((num_samples, in_channels, image_size, image_size))
+    shift = y - (num_classes - 1) / 2.0
+    return x + shift.reshape(num_samples, 1, 1, 1), y
 
 # Step 53 - shuffle_indices (not yet solved)
 # TODO: implement
