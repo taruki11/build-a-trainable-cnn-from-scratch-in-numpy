@@ -336,14 +336,26 @@ def maxpool2d_backward(d_out, cache):
                         scatter_grad_window(d_out[n, c, i, j], cache['argmax'][n, c, i, j], cache['kernel'])
     return dx
 
-# Step 25 - relu_forward (not yet solved)
-# TODO: implement
+# Step 25 - relu_forward
+def relu_forward(x):
+    return np.maximum(0, x), {'x': x}
 
-# Step 26 - relu_backward (not yet solved)
-# TODO: implement
+def relu_backward(d_out, cache):
+    return d_out * (cache['x'] > 0)
 
-# Step 27 - flatten_forward (not yet solved)
-# TODO: implement
+# Step 26 - relu_backward
+def relu_forward(x):
+    return np.maximum(0, x), {'x': x}
+
+def relu_backward(d_out, cache):
+    return d_out * (cache['x'] > 0)
+
+# Step 27 - flatten_forward
+def flatten_forward(x):
+    return x.reshape(x.shape[0], -1), {'x_shape': x.shape}
+
+def flatten_backward(d_out, cache):
+    return d_out.reshape(cache['x_shape'])
 
 # Step 28 - flatten_backward (not yet solved)
 # TODO: implement
