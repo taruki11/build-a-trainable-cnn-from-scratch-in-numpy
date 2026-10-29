@@ -65,8 +65,8 @@ python scaffold.py
 - [x] **53.** shuffle_indices
 - [x] **54.** train_test_split
 - [x] **55.** iterate_minibatches
-- [ ] **56.** train_step
-- [ ] **57.** train_one_epoch
+- [x] **56.** train_step
+- [x] **57.** train_one_epoch
 - [ ] **58.** train_loop
 - [ ] **59.** evaluate
 

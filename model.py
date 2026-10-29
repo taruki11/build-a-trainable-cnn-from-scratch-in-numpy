@@ -790,11 +790,47 @@ def iterate_minibatches(x, y, batch_size, seed=0):
         b_idx = idx[b * batch_size : (b + 1) * batch_size]
         yield x[b_idx], y[b_idx]
 
-# Step 56 - train_step (not yet solved)
-# TODO: implement
+# Step 56 - train_step
+def train_step(params, opt_state, xb, yb, lr, beta_one, beta_two, eps, step):
+    logits, caches = lenet_forward(xb, params)
+    loss = softmax_cross_entropy_forward(logits, yb)
+    dlogits = softmax_cross_entropy_backward(logits, yb)
+    grads = lenet_backward(dlogits, caches)
 
-# Step 57 - train_one_epoch (not yet solved)
-# TODO: implement
+    new_params, new_opt_state = {}, {}
+    for layer in params:
+        new_params[layer], new_opt_state[layer] = {}, {}
+        for pname in params[layer]:
+            p, g = params[layer][pname], grads[layer]['d' + pname]
+            m, v = opt_state[layer][pname]['m'], opt_state[layer][pname]['v']
+            np_, nm, nv = adam_step(p, g, m, v, step, lr, beta_one, beta_two, eps)
+            new_params[layer][pname] = np_
+            new_opt_state[layer][pname] = {'m': nm, 'v': nv}
+
+    return new_params, new_opt_state, float(loss)
+
+# Step 57 - train_one_epoch
+def train_one_epoch(params, opt_state, x, y, batch_size, lr, beta_one, beta_two, eps, step_counter, seed=0):
+    losses = []
+    for xb, yb in iterate_minibatches(x, y, batch_size, seed=seed):
+        step_counter += 1
+        params, opt_state, loss = train_step(params, opt_state, xb, yb, lr, beta_one, beta_two, eps, step_counter)
+        losses.append(loss)
+    return params, opt_state, step_counter, losses
+
+def train_loop(params, x_train, y_train, num_epochs, batch_size, lr=1e-3, beta_one=0.9, beta_two=0.999, eps=1e-8, seed=0):
+    opt_state = {layer: {p: {'m': np.zeros_like(params[layer][p]), 'v': np.zeros_like(params[layer][p])}
+                         for p in params[layer]} for layer in params}
+    step_counter, loss_history = 0, []
+    for epoch in range(num_epochs):
+        params, opt_state, step_counter, ep_losses = train_one_epoch(
+            params, opt_state, x_train, y_train, batch_size, lr, beta_one, beta_two, eps, step_counter, seed=seed + epoch
+        )
+        loss_history.extend(ep_losses)
+    return params, loss_history
+
+def evaluate(params, x, y):
+    return float(np.mean(lenet_predict(x, params) == y))
 
 # Step 58 - train_loop (not yet solved)
 # TODO: implement
