@@ -54,10 +54,10 @@ python scaffold.py
 - [x] **42.** init_conv_layer
 - [x] **43.** init_linear_layer
 - [x] **44.** init_lenet
-- [ ] **45.** forward_conv_block
-- [ ] **46.** forward_classifier_block
-- [ ] **47.** lenet_forward
-- [ ] **48.** backward_conv_block
+- [x] **45.** forward_conv_block
+- [x] **46.** forward_classifier_block
+- [x] **47.** lenet_forward
+- [x] **48.** backward_conv_block
 - [ ] **49.** backward_classifier_block
 - [ ] **50.** lenet_backward
 - [ ] **51.** lenet_predict

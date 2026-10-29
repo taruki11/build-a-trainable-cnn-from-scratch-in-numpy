@@ -618,17 +618,73 @@ def init_lenet(in_channels, num_classes, seed=0):
         'fc2': init_linear_layer(120, num_classes, seed=seed + 3),
     }
 
-# Step 45 - forward_conv_block (not yet solved)
-# TODO: implement
+# Step 45 - forward_conv_block
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
 
-# Step 46 - forward_classifier_block (not yet solved)
-# TODO: implement
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
 
-# Step 47 - lenet_forward (not yet solved)
-# TODO: implement
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
 
-# Step 48 - backward_conv_block (not yet solved)
-# TODO: implement
+# Step 46 - forward_classifier_block
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
+
+# Step 47 - lenet_forward
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
+
+# Step 48 - backward_conv_block
+def lenet_forward(x, params):
+    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
+    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
+    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
+    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+
+def lenet_backward(dlogits, caches):
+    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
+    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
+    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
+    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
+            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+
+def lenet_predict(x, params):
+    return argmax_rows(lenet_forward(x, params)[0])
 
 # Step 49 - backward_classifier_block (not yet solved)
 # TODO: implement
