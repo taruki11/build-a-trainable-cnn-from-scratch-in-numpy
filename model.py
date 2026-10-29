@@ -662,21 +662,60 @@ def lenet_predict(x, params):
     return argmax_rows(lenet_forward(x, params)[0])
 
 # Step 48 - backward_conv_block
-def lenet_forward(x, params):
-    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
-    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
-    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
-    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
+import numpy as np
 
-def lenet_backward(dlogits, caches):
-    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
-    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
-    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
-    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
-            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
+def pad_2d(images, pad):
+    if pad == 0:
+        return images
+    return np.pad(images, ((0, 0), (0, 0), (pad, pad), (pad, pad)), mode='constant')
 
-def lenet_predict(x, params):
-    return argmax_rows(lenet_forward(x, params)[0])
+def im2col(images, kernel_h, kernel_w, stride, padding):
+    N, C, H, W = images.shape
+    out_h = output_spatial_size(H, kernel_h, stride, padding)
+    out_w = output_spatial_size(W, kernel_w, stride, padding)
+    padded = pad_2d(images, padding)
+    buf = np.zeros((N, C, kernel_h, kernel_w, out_h, out_w), dtype=padded.dtype)
+    for i in range(kernel_h):
+        for j in range(kernel_w):
+            buf[:, :, i, j, :, :] = padded[:, :, i:i + stride*out_h:stride, j:j + stride*out_w:stride]
+    return buf.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, C * kernel_h * kernel_w)
+
+def conv2d_forward(x, weights, bias, stride, padding):
+    N, C_in, H, W = x.shape
+    C_out, _, kH, kW = weights.shape
+    out_h = output_spatial_size(H, kH, stride, padding)
+    out_w = output_spatial_size(W, kW, stride, padding)
+    cols = im2col(x, kH, kW, stride, padding)
+    out = cols @ weights.reshape(C_out, -1).T + bias.reshape(1, -1)
+    out = out.reshape(N, out_h, out_w, C_out).transpose(0, 3, 1, 2)
+    cache = {'x_shape': x.shape, 'weights': weights, 'cols': cols,
+             'stride': stride, 'padding': padding, 'kernel_h': kH, 'kernel_w': kW}
+    return out, cache
+
+def maxpool2d_forward(x, kernel, stride):
+    N, C, H, W = x.shape
+    out_h = output_spatial_size(H, kernel, stride, 0)
+    out_w = output_spatial_size(W, kernel, stride, 0)
+    out = np.zeros((N, C, out_h, out_w), dtype=x.dtype)
+    argmax = np.zeros((N, C, out_h, out_w), dtype=np.int64)
+    for i in range(out_h):
+        for j in range(out_w):
+            flat = x[:, :, i*stride:i*stride+kernel, j*stride:j*stride+kernel].reshape(N, C, -1)
+            out[:, :, i, j] = np.max(flat, axis=-1)
+            argmax[:, :, i, j] = np.argmax(flat, axis=-1)
+    return out, {'x_shape': x.shape, 'argmax': argmax, 'kernel': kernel, 'stride': stride}
+
+def forward_conv_block(x, W, b, pool_size, stride, pad):
+    conv_out, conv_cache = conv2d_forward(x, W, b, stride, pad)
+    relu_out, relu_cache = np.maximum(conv_out, 0), {'x': conv_out}
+    pool_out, pool_cache = maxpool2d_forward(relu_out, pool_size, pool_size)
+    return pool_out, {'conv_cache': conv_cache, 'relu_cache': relu_cache, 'pool_cache': pool_cache}
+
+def backward_conv_block(dout, cache):
+    d_pool = maxpool2d_backward(dout, cache['pool_cache'])
+    d_relu = relu_backward(d_pool, cache['relu_cache'])
+    dx, dW, db = conv2d_backward(d_relu, cache['conv_cache'])
+    return dx, dW, db
 
 # Step 49 - backward_classifier_block
 def lenet_forward(x, params):
