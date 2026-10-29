@@ -619,38 +619,30 @@ def init_lenet(in_channels, num_classes, seed=0):
     }
 
 # Step 45 - forward_conv_block
-def lenet_forward(x, params):
-    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
-    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
-    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
-    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
-
-def lenet_backward(dlogits, caches):
-    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
-    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
-    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
-    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
-            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
-
-def lenet_predict(x, params):
-    return argmax_rows(lenet_forward(x, params)[0])
+def forward_conv_block(x, W, b, pool_size, stride, pad):
+    conv_out, conv_cache = conv2d_forward(x, W, b, stride, pad)
+    relu_out, relu_cache = relu_forward(conv_out)
+    pool_out, pool_cache = maxpool2d_forward(relu_out, pool_size, pool_size)
+    cache = {
+        'conv_cache': conv_cache,
+        'relu_cache': relu_cache,
+        'pool_cache': pool_cache,
+    }
+    return pool_out, cache
 
 # Step 46 - forward_classifier_block
-def lenet_forward(x, params):
-    h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
-    h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
-    logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
-    return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
-
-def lenet_backward(dlogits, caches):
-    cls_grads = backward_classifier_block(dlogits, caches['classifier'])
-    dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
-    _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
-    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
-            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
-
-def lenet_predict(x, params):
-    return argmax_rows(lenet_forward(x, params)[0])
+def forward_classifier_block(x, fc1, fc2):
+    flat, flatten_cache = flatten_forward(x)
+    h1, fc1_cache = linear_forward(flat, fc1['W'], fc1['b'])
+    a1, relu_cache = relu_forward(h1)
+    logits, fc2_cache = linear_forward(a1, fc2['W'], fc2['b'])
+    cache = {
+        'flatten_cache': flatten_cache,
+        'fc1_cache': fc1_cache,
+        'relu_cache': relu_cache,
+        'fc2_cache': fc2_cache,
+    }
+    return logits, cache
 
 # Step 47 - lenet_forward
 def lenet_forward(x, params):
