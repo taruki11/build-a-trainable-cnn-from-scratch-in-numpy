@@ -775,8 +775,20 @@ def iterate_minibatches(x, y, batch_size, seed=0):
         b_idx = idx[b * batch_size : (b + 1) * batch_size]
         yield x[b_idx], y[b_idx]
 
-# Step 55 - iterate_minibatches (not yet solved)
-# TODO: implement
+# Step 55 - iterate_minibatches
+def shuffle_indices(n, seed=0):
+    return np.random.RandomState(seed).permutation(n)
+
+def train_test_split(x, y, test_fraction=0.2, seed=0):
+    n_test = int(len(x) * test_fraction)
+    idx = shuffle_indices(len(x), seed=seed)
+    return x[idx[n_test:]], y[idx[n_test:]], x[idx[:n_test]], y[idx[:n_test]]
+
+def iterate_minibatches(x, y, batch_size, seed=0):
+    idx = shuffle_indices(len(x), seed=seed)
+    for b in range(len(x) // batch_size):
+        b_idx = idx[b * batch_size : (b + 1) * batch_size]
+        yield x[b_idx], y[b_idx]
 
 # Step 56 - train_step (not yet solved)
 # TODO: implement
