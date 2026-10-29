@@ -270,11 +270,71 @@ def conv2d_backward(d_out, cache):
 # Step 22 - maxpool2d_forward (not yet solved)
 # TODO: implement
 
-# Step 23 - scatter_grad_window (not yet solved)
-# TODO: implement
+# Step 23 - scatter_grad_window
+def maxpool2d_forward(x, kernel, stride):
+    N, C, H, W = x.shape
+    out_h = output_spatial_size(H, kernel, stride, 0)
+    out_w = output_spatial_size(W, kernel, stride, 0)
+    out = np.zeros((N, C, out_h, out_w), dtype=x.dtype)
+    argmax = np.zeros((N, C, out_h, out_w), dtype=int)
+    for n in range(N):
+        for c in range(C):
+            for i in range(out_h):
+                for j in range(out_w):
+                    window = x[n, c, i*stride:i*stride+kernel, j*stride:j*stride+kernel]
+                    out[n, c, i, j] = np.max(window)
+                    argmax[n, c, i, j] = np.argmax(window)
+    return out, {'x_shape': x.shape, 'argmax': argmax, 'kernel': kernel, 'stride': stride}
 
-# Step 24 - maxpool2d_backward (not yet solved)
-# TODO: implement
+def scatter_grad_window(grad_value, argmax_index, kernel):
+    w = np.zeros((kernel, kernel), dtype=float)
+    w[argmax_index // kernel, argmax_index % kernel] = grad_value
+    return w
+
+def maxpool2d_backward(d_out, cache):
+    N, C, H, W = cache['x_shape']
+    dx = np.zeros((N, C, H, W), dtype=float)
+    for n in range(N):
+        for c in range(C):
+            for i in range(d_out.shape[2]):
+                for j in range(d_out.shape[3]):
+                    dx[n, c, i*cache['stride']:i*cache['stride']+cache['kernel'],
+                             j*cache['stride']:j*cache['stride']+cache['kernel']] += \
+                        scatter_grad_window(d_out[n, c, i, j], cache['argmax'][n, c, i, j], cache['kernel'])
+    return dx
+
+# Step 24 - maxpool2d_backward
+def maxpool2d_forward(x, kernel, stride):
+    N, C, H, W = x.shape
+    out_h = output_spatial_size(H, kernel, stride, 0)
+    out_w = output_spatial_size(W, kernel, stride, 0)
+    out = np.zeros((N, C, out_h, out_w), dtype=x.dtype)
+    argmax = np.zeros((N, C, out_h, out_w), dtype=int)
+    for n in range(N):
+        for c in range(C):
+            for i in range(out_h):
+                for j in range(out_w):
+                    window = x[n, c, i*stride:i*stride+kernel, j*stride:j*stride+kernel]
+                    out[n, c, i, j] = np.max(window)
+                    argmax[n, c, i, j] = np.argmax(window)
+    return out, {'x_shape': x.shape, 'argmax': argmax, 'kernel': kernel, 'stride': stride}
+
+def scatter_grad_window(grad_value, argmax_index, kernel):
+    w = np.zeros((kernel, kernel), dtype=float)
+    w[argmax_index // kernel, argmax_index % kernel] = grad_value
+    return w
+
+def maxpool2d_backward(d_out, cache):
+    N, C, H, W = cache['x_shape']
+    dx = np.zeros((N, C, H, W), dtype=float)
+    for n in range(N):
+        for c in range(C):
+            for i in range(d_out.shape[2]):
+                for j in range(d_out.shape[3]):
+                    dx[n, c, i*cache['stride']:i*cache['stride']+cache['kernel'],
+                             j*cache['stride']:j*cache['stride']+cache['kernel']] += \
+                        scatter_grad_window(d_out[n, c, i, j], cache['argmax'][n, c, i, j], cache['kernel'])
+    return dx
 
 # Step 25 - relu_forward (not yet solved)
 # TODO: implement
