@@ -464,8 +464,25 @@ def softmax_cross_entropy_backward(logits, y):
 def sgd_step(param, grad, lr):
     return param - lr * grad
 
-# Step 37 - adam_update_m (not yet solved)
-# TODO: implement
+# Step 37 - adam_update_m
+def adam_update_m(m, grad, beta_one):
+    return beta_one * m + (1.0 - beta_one) * grad
+
+def adam_update_v(v, grad, beta_two):
+    return beta_two * v + (1.0 - beta_two) * (grad ** 2)
+
+def adam_bias_correct(moment, beta, t):
+    return moment / (1.0 - beta ** t)
+
+def adam_param_step(param, m_hat, v_hat, lr, eps):
+    return param - lr * m_hat / (np.sqrt(v_hat) + eps)
+
+def adam_step(param, grad, m, v, t, lr, beta_one, beta_two, eps):
+    new_m = adam_update_m(m, grad, beta_one)
+    new_v = adam_update_v(v, grad, beta_two)
+    m_hat = adam_bias_correct(new_m, beta_one, t)
+    v_hat = adam_bias_correct(new_v, beta_two, t)
+    return adam_param_step(param, m_hat, v_hat, lr, eps), new_m, new_v
 
 # Step 38 - adam_update_v (not yet solved)
 # TODO: implement
