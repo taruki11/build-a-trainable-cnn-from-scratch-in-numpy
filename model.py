@@ -855,6 +855,26 @@ def train_loop(params, x_train, y_train, num_epochs, batch_size, lr=1e-3, beta_o
 def evaluate(params, x, y):
     return float(np.mean(lenet_predict(x, params) == y))
 
-# Step 59 - evaluate (not yet solved)
-# TODO: implement
+# Step 59 - evaluate
+def train_one_epoch(params, opt_state, x, y, batch_size, lr, beta_one, beta_two, eps, step_counter, seed=0):
+    losses = []
+    for xb, yb in iterate_minibatches(x, y, batch_size, seed=seed):
+        step_counter += 1
+        params, opt_state, loss = train_step(params, opt_state, xb, yb, lr, beta_one, beta_two, eps, step_counter)
+        losses.append(loss)
+    return params, opt_state, step_counter, losses
+
+def train_loop(params, x_train, y_train, num_epochs, batch_size, lr=1e-3, beta_one=0.9, beta_two=0.999, eps=1e-8, seed=0):
+    opt_state = {layer: {p: {'m': np.zeros_like(params[layer][p]), 'v': np.zeros_like(params[layer][p])}
+                         for p in params[layer]} for layer in params}
+    step_counter, loss_history = 0, []
+    for epoch in range(num_epochs):
+        params, opt_state, step_counter, ep_losses = train_one_epoch(
+            params, opt_state, x_train, y_train, batch_size, lr, beta_one, beta_two, eps, step_counter, seed=seed + epoch
+        )
+        loss_history.extend(ep_losses)
+    return params, loss_history
+
+def evaluate(params, x, y):
+    return float(np.mean(lenet_predict(x, params) == y))
 
