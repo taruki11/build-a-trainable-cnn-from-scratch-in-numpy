@@ -745,8 +745,20 @@ def build_synthetic_image_dataset(num_samples, num_classes, image_size, in_chann
     shift = y - (num_classes - 1) / 2.0
     return x + shift.reshape(num_samples, 1, 1, 1), y
 
-# Step 53 - shuffle_indices (not yet solved)
-# TODO: implement
+# Step 53 - shuffle_indices
+def shuffle_indices(n, seed=0):
+    return np.random.RandomState(seed).permutation(n)
+
+def train_test_split(x, y, test_fraction=0.2, seed=0):
+    n_test = int(len(x) * test_fraction)
+    idx = shuffle_indices(len(x), seed=seed)
+    return x[idx[n_test:]], y[idx[n_test:]], x[idx[:n_test]], y[idx[:n_test]]
+
+def iterate_minibatches(x, y, batch_size, seed=0):
+    idx = shuffle_indices(len(x), seed=seed)
+    for b in range(len(x) // batch_size):
+        b_idx = idx[b * batch_size : (b + 1) * batch_size]
+        yield x[b_idx], y[b_idx]
 
 # Step 54 - train_test_split (not yet solved)
 # TODO: implement
