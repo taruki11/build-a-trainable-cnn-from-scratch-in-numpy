@@ -741,21 +741,118 @@ def backward_classifier_block(dlogits, cache):
     }
 
 # Step 50 - lenet_backward
+import numpy as np
+
+def cross_entropy_loss(probs, labels, eps=1e-12):
+    p = probs[np.arange(len(labels)), labels]
+    return float(-np.mean(np.log(np.clip(p, eps, 1.0))))
+
+def he_std(fan_in): 
+    return float(np.sqrt(2.0 / fan_in))
+
+def he_init(shape, fan_in, seed):
+    np.random.seed(seed)
+    return np.random.normal(0.0, he_std(fan_in), size=shape).astype(np.float64)
+
+def init_zero_bias(length): 
+    return np.zeros(length, dtype=np.float64)
+
+def init_conv_layer(out_channels, in_channels, kernel_size, seed=0):
+    return {'W': he_init((out_channels, in_channels, kernel_size, kernel_size), in_channels * kernel_size * kernel_size, seed),
+            'b': init_zero_bias(out_channels)}
+
+def init_linear_layer(in_features, out_features, seed=0):
+    return {'W': he_init((in_features, out_features), in_features, seed),
+            'b': init_zero_bias(out_features)}
+
+def init_lenet(in_channels, num_classes, seed=0):
+    return {
+        'conv1': init_conv_layer(6, in_channels, 5, seed=seed),
+        'conv2': init_conv_layer(16, 6, 5, seed=seed + 1),
+        'fc1': init_linear_layer(256, 120, seed=seed + 2),
+        'fc2': init_linear_layer(120, num_classes, seed=seed + 3),
+    }
+
+def pad_2d(images, pad):
+    if pad == 0: return images
+    return np.pad(images, ((0, 0), (0, 0), (pad, pad), (pad, pad)), mode='constant')
+
+def im2col(images, kernel_h, kernel_w, stride, padding):
+    N, C, H, W = images.shape
+    out_h = output_spatial_size(H, kernel_h, stride, padding)
+    out_w = output_spatial_size(W, kernel_w, stride, padding)
+    padded = pad_2d(images, padding)
+    buf = np.zeros((N, C, kernel_h, kernel_w, out_h, out_w), dtype=padded.dtype)
+    for i in range(kernel_h):
+        for j in range(kernel_w):
+            buf[:, :, i, j, :, :] = padded[:, :, i:i + stride*out_h:stride, j:j + stride*out_w:stride]
+    return buf.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, C * kernel_h * kernel_w)
+
+def conv2d_forward(x, weights, bias, stride, padding):
+    N, C_in, H, W = x.shape
+    C_out, _, kH, kW = weights.shape
+    out_h = output_spatial_size(H, kH, stride, padding)
+    out_w = output_spatial_size(W, kW, stride, padding)
+    cols = im2col(x, kH, kW, stride, padding)
+    out = cols @ weights.reshape(C_out, -1).T + bias.reshape(1, -1)
+    out = out.reshape(N, out_h, out_w, C_out).transpose(0, 3, 1, 2)
+    cache = {'x_shape': x.shape, 'weights': weights, 'cols': cols,
+             'stride': stride, 'padding': padding, 'kernel_h': kH, 'kernel_w': kW}
+    return out, cache
+
+def maxpool2d_forward(x, kernel, stride):
+    N, C, H, W = x.shape
+    out_h = output_spatial_size(H, kernel, stride, 0)
+    out_w = output_spatial_size(W, kernel, stride, 0)
+    out = np.zeros((N, C, out_h, out_w), dtype=x.dtype)
+    argmax = np.zeros((N, C, out_h, out_w), dtype=np.int64)
+    for i in range(out_h):
+        for j in range(out_w):
+            flat = x[:, :, i*stride:i*stride+kernel, j*stride:j*stride+kernel].reshape(N, C, -1)
+            out[:, :, i, j] = np.max(flat, axis=-1)
+            argmax[:, :, i, j] = np.argmax(flat, axis=-1)
+    return out, {'x_shape': x.shape, 'argmax': argmax, 'kernel': kernel, 'stride': stride}
+
+def forward_conv_block(x, W, b, pool_size, stride, pad):
+    conv_out, conv_cache = conv2d_forward(x, W, b, stride, pad)
+    relu_out, relu_cache = np.maximum(conv_out, 0), {'x': conv_out}
+    pool_out, pool_cache = maxpool2d_forward(relu_out, pool_size, pool_size)
+    return pool_out, {'conv_cache': conv_cache, 'relu_cache': relu_cache, 'pool_cache': pool_cache}
+
+def forward_classifier_block(x, fc1, fc2):
+    flat = x.reshape(x.shape[0], -1)
+    h1 = flat @ fc1['W'] + fc1['b']
+    a1 = np.maximum(0, h1)
+    logits = a1 @ fc2['W'] + fc2['b']
+    return logits, {'flatten_cache': {'x_shape': x.shape}, 'fc1_cache': {'x': flat, 'weights': fc1['W']},
+                    'relu_cache': {'x': h1}, 'fc2_cache': {'x': a1, 'weights': fc2['W']}}
+
 def lenet_forward(x, params):
     h1, c1 = forward_conv_block(x, params['conv1']['W'], params['conv1']['b'], 2, 1, 0)
     h2, c2 = forward_conv_block(h1, params['conv2']['W'], params['conv2']['b'], 2, 1, 0)
     logits, c3 = forward_classifier_block(h2, params['fc1'], params['fc2'])
     return logits, {'block1': c1, 'block2': c2, 'classifier': c3}
 
+def stable_softmax(logits):
+    shifted = np.exp(logits - np.max(logits, axis=1, keepdims=True))
+    return shifted / np.sum(shifted, axis=1, keepdims=True)
+
+def one_hot(labels, num_classes):
+    labels = np.asarray(labels).astype(int)
+    out = np.zeros((labels.shape[0], num_classes), dtype=float)
+    out[np.arange(labels.shape[0]), labels] = 1.0
+    return out
+
 def lenet_backward(dlogits, caches):
     cls_grads = backward_classifier_block(dlogits, caches['classifier'])
     dh2, dW2, db2 = backward_conv_block(cls_grads['dx'], caches['block2'])
     _, dW1, db1 = backward_conv_block(dh2, caches['block1'])
-    return {'conv1': {'dW': dW1, 'db': db1}, 'conv2': {'dW': dW2, 'db': db2},
-            'fc1': cls_grads['fc1'], 'fc2': cls_grads['fc2']}
-
-def lenet_predict(x, params):
-    return argmax_rows(lenet_forward(x, params)[0])
+    return {
+        'conv1': {'dW': dW1, 'db': db1},
+        'conv2': {'dW': dW2, 'db': db2},
+        'fc1': cls_grads['fc1'],
+        'fc2': cls_grads['fc2'],
+    }
 
 # Step 51 - lenet_predict
 def lenet_forward(x, params):
