@@ -412,8 +412,21 @@ def linear_grad_bias(dout):
 def linear_backward(dout, cache):
     return linear_grad_input(dout, cache), linear_grad_weights(cache['x'], dout), linear_grad_bias(dout)
 
-# Step 32 - linear_grad_bias (not yet solved)
-# TODO: implement
+# Step 32 - linear_grad_bias
+def linear_forward(x, weights, bias):
+    return x @ weights + bias, {'x': x, 'weights': weights}
+
+def linear_grad_input(d_out, cache):
+    return d_out @ cache['weights'].T
+
+def linear_grad_weights(x, dout):
+    return x.T @ dout
+
+def linear_grad_bias(dout):
+    return np.sum(dout, axis=0)
+
+def linear_backward(dout, cache):
+    return linear_grad_input(dout, cache), linear_grad_weights(cache['x'], dout), linear_grad_bias(dout)
 
 # Step 33 - linear_backward (not yet solved)
 # TODO: implement
