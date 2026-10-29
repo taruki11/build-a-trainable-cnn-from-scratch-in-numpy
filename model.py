@@ -205,8 +205,36 @@ def conv2d_grad_bias(d_out):
 def conv2d_backward(d_out, cache):
     return conv2d_grad_input(d_out, cache), conv2d_grad_weights(d_out, cache), conv2d_grad_bias(d_out)
 
-# Step 20 - conv2d_grad_bias (not yet solved)
-# TODO: implement
+# Step 20 - conv2d_grad_bias
+def conv2d_forward(x, weights, bias, stride, padding):
+    N, C_in, H, W = x.shape
+    C_out, _, kH, kW = weights.shape
+    out_h = output_spatial_size(H, kH, stride, padding)
+    out_w = output_spatial_size(W, kW, stride, padding)
+    cols = im2col(x, kH, kW, stride, padding)
+    W_flat = weights.reshape(C_out, -1)
+    out = cols @ W_flat.T + bias.reshape(1, -1)
+    out = out.reshape(N, out_h, out_w, C_out).transpose(0, 3, 1, 2)
+    cache = {'x_shape': x.shape, 'weights': weights, 'cols': cols,
+             'stride': stride, 'padding': padding, 'kernel_h': kH, 'kernel_w': kW}
+    return out, cache
+
+def conv2d_grad_input(d_out, cache):
+    W_row = cache['weights'].reshape(cache['weights'].shape[0], -1)
+    d_out_row = d_out.transpose(0, 2, 3, 1).reshape(-1, cache['weights'].shape[0])
+    d_cols = d_out_row @ W_row
+    return col2im(d_cols, cache['x_shape'], cache['kernel_h'], cache['kernel_w'],
+                  cache['stride'], cache['padding'])
+
+def conv2d_grad_weights(d_out, cache):
+    d_out_row = d_out.transpose(0, 2, 3, 1).reshape(-1, cache['weights'].shape[0])
+    return (d_out_row.T @ cache['cols']).reshape(cache['weights'].shape)
+
+def conv2d_grad_bias(d_out):
+    return np.sum(d_out, axis=(0, 2, 3))
+
+def conv2d_backward(d_out, cache):
+    return conv2d_grad_input(d_out, cache), conv2d_grad_weights(d_out, cache), conv2d_grad_bias(d_out)
 
 # Step 21 - conv2d_backward (not yet solved)
 # TODO: implement
