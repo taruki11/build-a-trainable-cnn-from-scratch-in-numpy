@@ -357,8 +357,12 @@ def flatten_forward(x):
 def flatten_backward(d_out, cache):
     return d_out.reshape(cache['x_shape'])
 
-# Step 28 - flatten_backward (not yet solved)
-# TODO: implement
+# Step 28 - flatten_backward
+def flatten_forward(x):
+    return x.reshape(x.shape[0], -1), {'x_shape': x.shape}
+
+def flatten_backward(d_out, cache):
+    return d_out.reshape(cache['x_shape'])
 
 # Step 29 - linear_forward (not yet solved)
 # TODO: implement
