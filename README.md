@@ -48,8 +48,8 @@ python scaffold.py
 - [x] **36.** sgd_step
 - [x] **37.** adam_update_m
 - [x] **38.** adam_update_v
-- [ ] **39.** adam_bias_correct
-- [ ] **40.** adam_param_step
+- [x] **39.** adam_bias_correct
+- [x] **40.** adam_param_step
 - [ ] **41.** adam_step
 - [ ] **42.** init_conv_layer
 - [ ] **43.** init_linear_layer
