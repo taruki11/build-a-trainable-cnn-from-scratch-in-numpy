@@ -62,11 +62,15 @@ def he_init(shape, fan_in, seed):
 def init_zero_bias(length):
     return np.zeros(length, dtype=np.float64)
 
-# Step 13 - pad_2d (not yet solved)
-# TODO: implement
+# Step 13 - pad_2d
+def pad_2d(images, pad):
+    if pad == 0:
+        return images
+    return np.pad(images, ((0, 0), (0, 0), (pad, pad), (pad, pad)), mode='constant')
 
-# Step 14 - output_spatial_size (not yet solved)
-# TODO: implement
+# Step 14 - output_spatial_size
+def output_spatial_size(input_size, kernel, stride, padding):
+    return (input_size + 2 * padding - kernel) // stride + 1
 
 # Step 15 - im2col (not yet solved)
 # TODO: implement

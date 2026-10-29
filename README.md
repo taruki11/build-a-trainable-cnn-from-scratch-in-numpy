@@ -22,8 +22,8 @@ python scaffold.py
 - [x] **10.** he_std
 - [x] **11.** he_init
 - [x] **12.** init_zero_bias
-- [ ] **13.** pad_2d
-- [ ] **14.** output_spatial_size
+- [x] **13.** pad_2d
+- [x] **14.** output_spatial_size
 - [ ] **15.** im2col
 - [ ] **16.** col2im
 - [ ] **17.** conv2d_forward
